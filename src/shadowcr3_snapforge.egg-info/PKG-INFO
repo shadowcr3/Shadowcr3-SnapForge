@@ -1,0 +1,226 @@
+Metadata-Version: 2.4
+Name: shadowcr3-snapforge
+Version: 0.1.0
+Summary: SnapForge — Create. Refine. Export. A local-first, open-source desktop photo editor.
+Author: Avanish Raut (Shadowcr3)
+License: GPL-3.0-only
+Project-URL: Homepage, https://github.com/shadowcr3/Shadowcr3-SnapForge
+Project-URL: Issues, https://github.com/shadowcr3/Shadowcr3-SnapForge/issues
+Keywords: photo-editor,image-processing,pyside6,desktop
+Classifier: Development Status :: 3 - Alpha
+Classifier: Environment :: X11 Applications :: Qt
+Classifier: Intended Audience :: End Users/Desktop
+Classifier: License :: OSI Approved :: GNU General Public License v3 (GPLv3)
+Classifier: Operating System :: Microsoft :: Windows
+Classifier: Operating System :: POSIX :: Linux
+Classifier: Programming Language :: Python :: 3.12
+Classifier: Topic :: Multimedia :: Graphics :: Editors :: Raster-Based
+Requires-Python: >=3.12
+Description-Content-Type: text/markdown
+License-File: LICENSE
+Requires-Dist: PySide6-Essentials==6.12.0
+Requires-Dist: Pillow==13.0.0
+Requires-Dist: numpy==2.5.4
+Provides-Extra: dev
+Requires-Dist: pytest==9.1.1; extra == "dev"
+Requires-Dist: pytest-qt==4.5.0; extra == "dev"
+Requires-Dist: ruff==0.17.3; extra == "dev"
+Requires-Dist: pyinstaller==6.22.3; extra == "dev"
+Dynamic: license-file
+
+# Shadowcr3 SnapForge
+
+**Create. Refine. Export.**
+
+A local-first, open-source desktop photo editor. SnapForge opens a JPEG,
+PNG, or WebP image, lets you crop, rotate/flip, and adjust brightness,
+contrast, saturation, warmth, and sharpness with a live preview and full
+undo/redo, and exports the result — without ever uploading your photo
+anywhere. There is no network code in this application at all.
+
+New to SnapForge? Install it (two commands, below), run `snapforge`, and
+open **Help → Getting Started** in the app for a short walkthrough — or
+just open a photo and start dragging sliders, everything can be undone.
+
+![platform](https://img.shields.io/badge/platform-Windows%20%7C%20Linux-informational)
+![license](https://img.shields.io/badge/license-GPLv3-blue)
+![python](https://img.shields.io/badge/python-3.12%2B-blue)
+
+## Why this exists
+
+Most "simple" photo editors are either bloated (full Adobe-style suites for
+a one-off crop) or cloud-based (your photos leave your machine). SnapForge
+is the other option: a small, fast, offline, non-destructive editor for the
+80% case — fix the crop, fix the white balance, export it — built as an
+open, auditable codebase rather than a black box.
+
+## Features (v0.1)
+
+- **Import**: JPEG, PNG, WebP. EXIF orientation is normalized on import so
+  what you see is what gets exported.
+- **Adjustments**: brightness, contrast, saturation, warmth, sharpness —
+  each a slider with a live preview.
+- **Geometry**: crop (drag-to-select), rotate in 90° steps, flip
+  horizontal/vertical.
+- **Non-destructive editing**: every edit is a parameter, not a pixel
+  mutation. The original is never touched in memory or on disk.
+- **Full undo/redo**: every discrete action (crop, rotate, flip) is one
+  undo step; dragging a slider is coalesced into exactly one step on
+  release, not one step per pixel of mouse movement.
+- **Before/After compare**: toggle to see the untouched original.
+- **Export**: JPEG, PNG, WebP, with quality control for lossy formats.
+  Exports are atomic (write-to-temp, verify, then swap in) and will never
+  silently overwrite your source file.
+- **Zoom**: fit-to-window by default, with zoom in/out (`Ctrl +` / `Ctrl -`),
+  actual size (`Ctrl 1`), and fit (`Ctrl 0`); pans via scrollbars once
+  zoomed past the window.
+
+## Metadata policy
+
+**Every export strips all metadata** — EXIF (including GPS coordinates,
+device identifiers, capture timestamps), ICC color profile, and any
+XMP/IPTC data. This is unconditional; there is no "preserve metadata"
+option in v0.1. Image *orientation* specifically is not lost in practice —
+it's baked into the pixel data on import, before export's stripping policy
+even applies, so a photo taken in portrait stays displayed correctly.
+
+This is a deliberate choice, not an oversight: see
+[`docs/DECISIONS.md`](docs/DECISIONS.md) for why strip-everything was
+chosen over selective preservation for this release.
+
+See [`docs/ROADMAP.md`](docs/ROADMAP.md) for what's planned beyond v0.1
+(curve-based white balance, RAW support, local plugin/filter system, etc.)
+and [`docs/DECISIONS.md`](docs/DECISIONS.md) for the handful of scope
+boundaries drawn deliberately in this release (e.g. why rotation is
+quarter-turn-only for now).
+
+## Screenshots
+
+_(Add screenshots to `docs/screenshots/` and reference them here once the
+UI is running in your environment — screenshots aren't generated as part
+of this repository.)_
+
+## Installation
+
+### From source (all platforms)
+
+Requires Python 3.12+.
+
+```bash
+git clone https://github.com/shadowcr3/Shadowcr3-SnapForge.git
+cd Shadowcr3-SnapForge
+python -m venv .venv
+source .venv/bin/activate        # Windows: .venv\Scripts\activate
+pip install -e ".[dev]"
+snapforge
+```
+
+Dependencies are pinned to exact tested versions in `pyproject.toml`, so
+`pip install` fetches exactly what's needed instead of searching through
+many releases — on a normal connection this should take well under a
+minute. If `snapforge` isn't found after install, make sure the virtual
+environment above is still active in your terminal (`source .venv/bin/
+activate` again if you opened a new terminal window) — `pip install`
+installs the command into that environment, not system-wide.
+
+### Prebuilt binaries
+
+Windows `.exe` and Linux `AppImage`/standalone builds are produced via
+PyInstaller — see [`packaging/BUILD.md`](packaging/BUILD.md) for build
+instructions and [`packaging/README.md`](packaging/README.md) for what a
+release artifact contains. No prebuilt binaries are hosted in this
+repository itself; build your own from a tagged release, or see the
+project's GitHub Releases page once published.
+
+## Usage
+
+1. **File → Open** (or `Ctrl+O`) an image.
+2. Drag the sliders in the right-hand **Adjustments** panel. The canvas
+   updates live as you drag; your edit history gets exactly one entry when
+   you release the slider.
+3. Use the toolbar for **Rotate**, **Flip**, and **Crop** (click Crop, then
+   drag a rectangle on the image).
+4. Click **Before / After** to compare against the untouched original.
+5. `Ctrl+Z` / `Ctrl+Y` to undo/redo. `Ctrl +`/`Ctrl -` to zoom, `Ctrl 1`
+   for actual size, `Ctrl 0` to fit the window again.
+6. **File → Export** (or `Ctrl+E`) to save — choose format, quality (for
+   JPEG/WebP), and destination. SnapForge will ask before overwriting an
+   existing file and will never overwrite your original without that
+   explicit confirmation.
+
+**Help → Getting Started** in the app has this same walkthrough, and
+**Help → About SnapForge** shows the version you're running.
+
+## Architecture
+
+```
+src/snapforge/
+├── imaging/        Pure image operations (no Qt, no filesystem). The only
+│                    place pixel math happens. Fully unit-testable.
+├── models/          ImageDocument (protected source + edit params) and
+│                    EditHistory (undo/redo over immutable EditParams
+│                    snapshots — not image buffers).
+├── services/        Import/export: content-sniffed decode, atomic
+│                    temp-file-then-replace writes, overwrite protection.
+├── controllers/      EditorController — the only thing the UI talks to for
+│                    editing logic. Owns no widgets, does no painting.
+├── ui/              PySide6 widgets. Presentation only — never calls
+│                    imaging/ or services/ directly.
+└── main.py          Entry point: stand up QApplication + MainWindow.
+```
+
+The one invariant everything else depends on: **`imaging.operations.render()`
+is the single code path both the live preview and the final export use.**
+Preview and export can never silently disagree, because they're not two
+implementations — they're one function called with and without a
+downscale step. See the docstring on `render()` for the canonical,
+explicitly-ordered operation pipeline (rotate/flip → crop → color →
+sharpen) and why that order was chosen.
+
+## Verifying a build
+
+`snapforge --self-test` runs a scripted open → adjust → rotate/flip → crop
+→ undo/redo → zoom → export sequence with no window shown and prints
+`PASS`/`FAIL`. Useful for confirming a packaged binary actually works, not
+just that it was built without error — see `packaging/BUILD.md`.
+
+## Testing
+
+```bash
+pip install -e ".[dev]"
+pytest                      # 95 tests: imaging, history, document, import/export,
+                             # controller (pytest-qt), canvas coordinate mapping
+ruff check src/ tests/      # lint
+```
+
+`imaging/`, `models/`, and `services/` have no Qt dependency and are tested
+as plain Python. `controllers/` and `ui/` are tested with `pytest-qt`
+against a real (headless/offscreen) `QApplication`, driving actual Qt
+signals rather than mocking them — see `tests/test_controller.py` and
+`tests/test_canvas.py`.
+
+Test fixtures are procedurally generated at test time (see
+`tests/conftest.py`); no personal photographs are shipped as test data.
+
+## Contributing
+
+See [`CONTRIBUTING.md`](CONTRIBUTING.md). Short version: open an issue
+before a large PR, keep `imaging/` free of Qt and filesystem code, run
+`pytest` and `ruff check` before submitting.
+
+## Security
+
+See [`SECURITY.md`](SECURITY.md) for the project's threat model and how to
+report a vulnerability.
+
+## Dependencies and licensing
+
+Three runtime dependencies: PySide6, Pillow, numpy. See
+[`docs/DEPENDENCIES.md`](docs/DEPENDENCIES.md) for the full license review,
+including an unresolved LGPL packaging caveat around PySide6/Qt that you
+should read before distributing a built binary.
+
+## License
+
+GPLv3 — see [`LICENSE`](LICENSE). Copyright © 2026 Avanish Vaibhav Raut
+([@shadowcr3](https://github.com/shadowcr3)).

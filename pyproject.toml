@@ -1,0 +1,70 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.build_meta"
+
+[project]
+name = "shadowcr3-snapforge"
+version = "0.1.0"
+description = "SnapForge — Create. Refine. Export. A local-first, open-source desktop photo editor."
+readme = "README.md"
+requires-python = ">=3.12"
+license = { text = "GPL-3.0-only" }
+authors = [{ name = "Avanish Raut (Shadowcr3)" }]
+keywords = ["photo-editor", "image-processing", "pyside6", "desktop"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: X11 Applications :: Qt",
+    "Intended Audience :: End Users/Desktop",
+    "License :: OSI Approved :: GNU General Public License v3 (GPLv3)",
+    "Operating System :: Microsoft :: Windows",
+    "Operating System :: POSIX :: Linux",
+    "Programming Language :: Python :: 3.12",
+    "Topic :: Multimedia :: Graphics :: Editors :: Raster-Based",
+]
+
+dependencies = [
+    # PySide6-Essentials, not the full PySide6 metapackage: SnapForge only
+    # uses QtCore/QtGui/QtWidgets. The full "PySide6" package also pulls in
+    # PySide6-Addons, PySide6-Pdf, and PySide6-WebEngine (~180MB combined)
+    # that this app never imports and never needs.
+    "PySide6-Essentials==6.12.0",
+    "Pillow==13.0.0",
+    "numpy==2.5.4",
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest==9.1.1",
+    "pytest-qt==4.5.0",
+    "ruff==0.17.3",
+    "pyinstaller==6.22.3",
+]
+
+[project.scripts]
+snapforge = "snapforge.main:main"
+
+[project.urls]
+Homepage = "https://github.com/shadowcr3/Shadowcr3-SnapForge"
+Issues = "https://github.com/shadowcr3/Shadowcr3-SnapForge/issues"
+
+[tool.setuptools.packages.find]
+where = ["src"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+qt_api = "pyside6"
+# Image.getdata() is used only in test assertions (never in src/) to compare
+# pixel buffers; it is deprecated in very recent Pillow releases in favor of
+# get_flattened_data() but remains fully functional and is not scheduled for
+# removal until Pillow 14. Silencing this keeps test output readable without
+# masking warnings from anything this project actually ships.
+filterwarnings = [
+    "ignore:Image.Image.getdata is deprecated:DeprecationWarning",
+]
+
+[tool.ruff]
+line-length = 100
+target-version = "py312"
+
+[tool.ruff.lint]
+select = ["E", "F", "I", "UP", "B", "SIM"]

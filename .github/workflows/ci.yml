@@ -1,0 +1,84 @@
+name: CI
+
+on:
+  push:
+    branches: [main]
+  pull_request:
+    branches: [main]
+
+jobs:
+  test:
+    strategy:
+      fail-fast: false
+      matrix:
+        os: [ubuntu-latest, windows-latest]
+        python-version: ["3.12"]
+    runs-on: ${{ matrix.os }}
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python ${{ matrix.python-version }}
+        uses: actions/setup-python@v5
+        with:
+          python-version: ${{ matrix.python-version }}
+
+      # PySide6 needs a display even for "offscreen" rendering on Linux CI
+      # runners; xvfb provides one. Not needed on windows-latest.
+      - name: Install Linux display dependencies
+        if: runner.os == 'Linux'
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libopengl0 libxkbcommon0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 xvfb
+
+      - name: Install package + dev dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Lint
+        run: ruff check src/ tests/
+
+      - name: Test (Linux, offscreen Qt platform)
+        if: runner.os == 'Linux'
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: pytest -v
+
+      - name: Test (Windows)
+        if: runner.os == 'Windows'
+        env:
+          QT_QPA_PLATFORM: offscreen
+        run: pytest -v
+
+  package-smoke-test:
+    # Builds the actual PyInstaller package and runs it — not the source
+    # tree — through `--self-test` (see packaging/BUILD.md and
+    # snapforge.main._run_self_test). This is what verifies acceptance
+    # item "the packaged application passes a basic launch, edit, and
+    # export smoke test" on every push, rather than only at release time.
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v4
+
+      - name: Set up Python
+        uses: actions/setup-python@v5
+        with:
+          python-version: "3.12"
+
+      - name: Install Linux display + Qt runtime dependencies
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y libegl1 libopengl0 libxkbcommon0 \
+            libxcb-cursor0 libxcb-icccm4 libxcb-image0 libxcb-keysyms1 \
+            libxcb-randr0 libxcb-render-util0 libxcb-shape0 xvfb
+
+      - name: Install package + dev dependencies
+        run: pip install -e ".[dev]"
+
+      - name: Build, trim, and self-test the package
+        run: ./packaging/build_linux.sh
+
+      - name: Smoke-test the trimmed binary again (clean env, real X display)
+        run: |
+          xvfb-run -a env -i PATH=/usr/bin:/bin HOME=/root \
+            ./dist/snapforge/snapforge --self-test
